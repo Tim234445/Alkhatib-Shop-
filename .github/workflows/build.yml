@@ -1,8 +1,8 @@
 name: Build Flutter APK
 
 on:
-  push:
-    branches: [ main, master ]
+    push:
+      branches: [ main, master ]
 
 jobs:
   build:
@@ -22,6 +22,15 @@ jobs:
         uses: subosito/flutter-action@v2
         with:
           channel: 'stable'
+
+      - name: Create Android Structure
+        run: |
+          flutter create . --org com.khateeb.pos --project-name khateeb_pos --platforms=android
+
+      - name: Restore Custom main.dart
+        run: |
+          # سيتم التأكد من بقاء ملف الـ main.dart الخاص بك
+          ls -la lib/
 
       - name: Install Dependencies
         run: flutter pub get
