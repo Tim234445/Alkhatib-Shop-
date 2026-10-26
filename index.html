@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>كاشير - الخطيب للكهرباء</title>
+    <style>
+        * { box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 0; }
+        body { background-color: #d1d5db; display: flex; justify-content: center; align-items: center; min-height: 100vh; padding: 10px; }
+        
+        .app-window { width: 100%; max-width: 1024px; background: #e5e7eb; border-radius: 8px; overflow: hidden; box-shadow: 0 10px 25px rgba(0,0,0,0.2); border: 1px solid #9ca3af; }
+        
+        /* Top Blue Header */
+        .top-bar { background-color: #2563eb; color: white; padding: 10px 20px; display: flex; justify-content: space-between; align-items: center; }
+        .top-bar .title { font-size: 18px; font-weight: bold; }
+        .top-bar .exchange-box { background: rgba(255, 255, 255, 0.2); padding: 4px 12px; border-radius: 6px; text-align: center; border: 1px solid rgba(255, 255, 255, 0.4); }
+        .top-bar .exchange-box label { font-size: 10px; display: block; opacity: 0.9; }
+        .top-bar .exchange-box input { background: transparent; border: none; color: white; font-weight: bold; text-align: center; font-size: 16px; width: 60px; outline: none; }
+        
+        .main-content { padding: 15px; }
+        
+        /* Store Header Info */
+        .store-header { text-align: center; margin-bottom: 12px; }
+        .store-header h1 { font-size: 20px; color: #1e3a8a; margin-bottom: 2px; }
+        .store-header p { font-size: 12px; color: #4b5563; }
+        
+        /* Barcode Field */
+        .barcode-section { margin-bottom: 15px; position: relative; }
+        .barcode-input-container { border: 2px solid #93c5fd; border-radius: 6px; background: #f3f4f6; padding: 8px 12px; position: relative; }
+        .barcode-input-container label { position: absolute; top: -10px; right: 15px; background: #e5e7eb; padding: 0 5px; font-size: 11px; color: #2563eb; font-weight: bold; }
+        .barcode-input-container input { width: 100%; background: transparent; border: none; outline: none; font-size: 16px; padding-right: 30px; }
+        .barcode-icon { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); opacity: 0.5; font-size: 18px; }
+
+        /* Table Area */
+        .table-container { background: white; border: 1px solid #d1d5db; border-radius: 6px; min-height: 280px; max-height: 380px; overflow-y: auto; position: relative; }
+        table { width: 100%; border-collapse: collapse; text-align: center; }
+        th { background-color: #f3f4f6; color: #374151; padding: 10px; font-size: 14px; border-bottom: 2px solid #e5e7eb; position: sticky; top: 0; }
+        td { padding: 10px; border-bottom: 1px solid #f3f4f6; font-size: 14px; color: #1f2937; }
+        
+        .empty-msg { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: #9ca3af; font-size: 15px; pointer-events: none; }
+        
+        .editable-price { width: 80px; padding: 4px; text-align: center; border: 1px solid #d1d5db; border-radius: 4px; }
+        .qty-btn { background: #e5e7eb; border: none; padding: 2px 8px; cursor: pointer; border-radius: 4px; font-weight: bold; }
+
+        /* Total Amount Yellow Bar */
+        .total-bar { background-color: #fef08a; border: 1px solid #fde047; padding: 12px 20px; border-radius: 6px; margin-top: 15px; display: flex; justify-content: space-between; align-items: center; }
+        .total-label { font-size: 18px; font-weight: bold; color: #374151; }
+        .total-val { font-size: 22px; font-weight: bold; color: #2563eb; }
+
+        /* Bottom Action Buttons */
+        .actions-bar { display: flex; gap: 12px; margin-top: 15px; }
+        .btn { flex: 1; padding: 14px; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .btn-print { background-color: #d1d5db; color: #374151; }
+        .btn-print:hover { background-color: #9ca3af; }
+        .btn-noprint { background-color: #e5e7eb; color: #4b5563; }
+        .btn-noprint:hover { background-color: #d1d5db; }
+        .btn-cancel { background-color: #ef4444; color: white; }
+        .btn-cancel:hover { background-color: #dc2626; }
+
+        .status-footer { text-align: center; font-size: 11px; margin-top: 8px; color: #059669; font-weight: bold; }
+
+        @media print {
+            body { background: white; padding: 0; }
+            .app-window { border: none; box-shadow: none; }
+            .top-bar, .barcode-section, .actions-bar, .status-footer, .qty-btn, th:first-child, td:first-child { display: none !important; }
+            .editable-price { border: none; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="app-window">
+    <!-- Top Bar -->
+    <div class="top-bar">
+        <div class="title">كاشير - الخطيب للكهرباء</div>
+        <div class="exchange-box">
+            <label>سعر الصرف</label>
+            <input type="text" id="exchangeRate" value="140.0">
+        </div>
+    </div>
+
+    <div class="main-content">
+        <!-- Store Info -->
+        <div class="store-header">
+            <h1>الخطيب للكهرباء</h1>
+            <p>دمشق - أسد الدين - جسر النحاس - مقابل جامع حموليلا | هاتف: 2762484</p>
+        </div>
+
+        <!-- Barcode Input -->
+        <div class="barcode-section">
+            <div class="barcode-input-container">
+                <label>امسح الباركود هنا</label>
+                <span class="barcode-icon">🔍</span>
+                <input type="text" id="barcodeInput" autofocus onkeypress="handleBarcode(event)">
+            </div>
+        </div>
+
+        <!-- Cart Table -->
+        <div class="table-container">
+            <table id="cartTable">
+                <thead>
+                    <tr>
+                        <th>الباركود</th>
+                        <th>اسم المادة</th>
+                        <th>السعر الفردي</th>
+                        <th>الكمية</th>
+                        <th>المجموع</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+            <div class="empty-msg" id="emptyMsg">لم يتم اختيار أي مادة بعد، امسح الباركود للبدء</div>
+        </div>
+
+        <!-- Total Yellow Bar -->
+        <div class="total-bar">
+            <div class="total-label">:المجموع العام</div>
+            <div class="total-val" id="totalAmount">ل.س 0.0</div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="actions-bar">
+            <button class="btn btn-print" onclick="printInvoice()">مع فاتورة 🖨️</button>
+            <button class="btn btn-noprint" onclick="completeSaleWithoutPrint()">بدون فاتورة ⚡</button>
+            <button class="btn btn-cancel" onclick="cancelOrder()">إلغاء ✖</button>
+        </div>
+
+        <div class="status-footer" id="statusMsg">جاري الاتصال بجدول غوغل شيتس...</div>
+    </div>
+</div>
+
+<script>
+    let productsDatabase = {};
+    let cart = [];
+    const csvUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSzYRMUtZRPznTdbguLz8PLDOGurW3HSNg-Kp-VCnMm8zsjgug2xK8a6JEUSt16WpNWpA6WlZYPgvhE/pub?gid=1136409100&single=true&output=csv';
+
+    window.onload = function() {
+        const proxyUrl = 'https://api.allorigins.win/raw?url=' + encodeURIComponent(csvUrl);
+        fetch(proxyUrl)
+            .then(response => response.text())
+            .then(data => {
+                parseCSV(data);
+                document.getElementById('statusMsg').innerText = "✔️ متصل بجدول بضائع المحل بنجاح";
+            })
+            .catch(err => {
+                document.getElementById('statusMsg').innerText = "⚠️ يعمل بالوضع المحلي (تأكد من شبكة الإنترنت)";
+            });
+    };
+
+    function parseCSV(text) {
+        const rows = text.split('\n');
+        for (let i = 1; i < rows.length; i++) {
+            const cols = rows[i].split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/);
+            if (cols.length >= 5) {
+                const barcode = cols[0] ? cols[0].trim().replace(/"/g, '') : '';
+                const name = cols[1] ? cols[1].trim().replace(/"/g, '') : '';
+                const price = cols[4] ? parseFloat(cols[4].trim().replace(/"/g, '')) : 0;
+                
+                if (barcode) {
+                    productsDatabase[barcode] = { barcode: barcode, name: name, price: isNaN(price) ? 0 : price };
+                }
+            }
+        }
+    }
+
+    function handleBarcode(event) {
+        if (event.key === 'Enter') {
+            const barcode = document.getElementById('barcodeInput').value.trim();
+            if (productsDatabase[barcode]) {
+                addProductToCart(productsDatabase[barcode]);
+            } else if (barcode !== "") {
+                alert("⚠️ هذا الباركود غير موجود في الجدول: " + barcode);
+            }
+            document.getElementById('barcodeInput').value = '';
+        }
+    }
+
+    function addProductToCart(product) {
+        let existing = cart.find(item => item.barcode === product.barcode);
+        if (existing) {
+            existing.qty += 1;
+        } else {
+            cart.push({ barcode: product.barcode, name: product.name, price: product.price, qty: 1 });
+        }
+        updateCartUI();
+    }
+
+    function updateCartUI() {
+        const tbody = document.querySelector('#cartTable tbody');
+        const emptyMsg = document.getElementById('emptyMsg');
+        tbody.innerHTML = '';
+        let total = 0;
+
+        if (cart.length === 0) {
+            emptyMsg.style.display = 'block';
+        } else {
+            emptyMsg.style.display = 'none';
+        }
+
+        cart.forEach((item, index) => {
+            let itemTotal = item.price * item.qty;
+            total += itemTotal;
+            tbody.innerHTML += `
+                <tr>
+                    <td>${item.barcode}</td>
+                    <td>${item.name}</td>
+                    <td><input type="number" class="editable-price" value="${item.price}" onchange="updatePrice(${index}, this.value)"></td>
+                    <td>
+                        <button class="qty-btn" onclick="changeQty(${index}, -1)">-</button>
+                        <span style="margin: 0 5px;">${item.qty}</span>
+                        <button class="qty-btn" onclick="changeQty(${index}, 1)">+</button>
+                    </td>
+                    <td>${itemTotal.toFixed(1)}</td>
+                </tr>
+            `;
+        });
+        document.getElementById('totalAmount').innerText = `ل.س ${total.toFixed(1)}`;
+    }
+
+    function updatePrice(index, newPrice) {
+        cart[index].price = parseFloat(newPrice) || 0;
+        updateCartUI();
+    }
+
+    function changeQty(index, delta) {
+        cart[index].qty += delta;
+        if (cart[index].qty <= 0) {
+            cart.splice(index, 1);
+        }
+        updateCartUI();
+    }
+
+    function cancelOrder() {
+        if(cart.length > 0 && confirm("هل أنت متأكد من إلغاء هذه العملية بالكامل؟")) {
+            cart = [];
+            updateCartUI();
+        }
+    }
+
+    function completeSaleWithoutPrint() {
+        if(cart.length === 0) {
+            alert("السلة فارغة!");
+            return;
+        }
+        cart = [];
+        updateCartUI();
+        alert("تم إتمام العملية بنجاح بدون فاتورة.");
+    }
+
+    function printInvoice() {
+        if(cart.length === 0) {
+            alert("السلة فارغة!");
+            return;
+        }
+        window.print();
+        cart = [];
+        updateCartUI();
+    }
+</script>
+
+</body>
+</html>
