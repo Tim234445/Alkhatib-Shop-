@@ -14,9 +14,15 @@ jobs:
       - uses: subosito/flutter-action@v2
         with:
           flutter-version: '3.19.x'
-      - run: flutter pub get
-      - run: flutter build apk --debug
+      - name: Create project and build
+        run: |
+          flutter create temp_project --org com.alkhatib.shop --platforms=android
+          cp lib/main.dart temp_project/lib/main.dart
+          cp pubspec.yaml temp_project/pubspec.yaml
+          cd temp_project
+          flutter pub get
+          flutter build apk --debug
       - uses: actions/upload-artifact@v4
         with:
-          name: apk
-          path: build/app/outputs/flutter-apk/app-debug.apk
+          name: app-debug
+          path: temp_project/build/app/outputs/flutter-apk/app-debug.apk
