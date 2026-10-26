@@ -24,13 +24,10 @@ jobs:
           channel: 'stable'
           cache: true
 
-      - name: Create Android files
-        run: flutter create . --platforms=android --project-name=alkhatib_pos
-
       - name: Install dependencies
         run: flutter pub get
 
-      - name: Build APK
+      - name: Build APK Debug
         run: flutter build apk --debug
 
       - name: Upload APK
