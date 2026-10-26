@@ -25,7 +25,7 @@ jobs:
 
       - name: Generate Android Template and Build
         run: |
-          flutter create . --platforms=android --org com.alkhatib.pos
+          flutter create . --platforms=android --project-name=alkhatib_shop
           flutter pub get
           flutter build apk --debug --verbose
 
