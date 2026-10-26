@@ -1,36 +1,22 @@
-name: Build Flutter APK
+name: Build APK
 
-on:
-  push:
-    branches: [ "main" ]
+on: [push]
 
 jobs:
   build:
     runs-on: ubuntu-latest
-
     steps:
       - uses: actions/checkout@v4
-
-      - name: Set up Java
-        uses: actions/setup-java@v3
+      - uses: actions/setup-java@v3
         with:
           distribution: 'zulu'
           java-version: '17'
-
-      - name: Set up Flutter
-        uses: subosito/flutter-action@v2
+      - uses: subosito/flutter-action@v2
         with:
           flutter-version: '3.19.x'
-          channel: 'stable'
-
-      - name: Generate Android Template and Build
-        run: |
-          flutter create . --platforms=android --project-name=alkhatib_shop
-          flutter pub get
-          flutter build apk --debug --verbose
-
-      - name: Upload APK
-        uses: actions/upload-artifact@v4
+      - run: flutter pub get
+      - run: flutter build apk --debug
+      - uses: actions/upload-artifact@v4
         with:
-          name: app-debug
+          name: apk
           path: build/app/outputs/flutter-apk/app-debug.apk
