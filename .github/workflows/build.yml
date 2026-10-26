@@ -24,6 +24,9 @@ jobs:
           channel: 'stable'
           cache: true
 
+      - name: Generate Android Template
+        run: flutter create . --platforms=android --org com.alkhatib.pos
+
       - name: Install dependencies
         run: flutter pub get
 
