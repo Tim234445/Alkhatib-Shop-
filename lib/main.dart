@@ -1,8 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
-// استيراد مكتبة طباعة البلوتوث ESC/POS
-import 'package:flutter_bluetooth_serial/flutter_bluetooth_serial.dart';
 
 void main() {
   runApp(const AlKhatibShopApp());
@@ -30,32 +28,24 @@ class POSHomePage extends StatefulWidget {
 }
 
 class _POSHomePageState extends State<POSHomePage> {
-  // رابط جدول Google Sheets (CSV)
+  // ضع رابط الـ CSV الخاص بجدول Google Sheets هنا
   final String sheetUrl = 'رابط_الـ_CSV_الخاص_بك_هنا';
   
   List<Map<String, dynamic>> products = [];
   List<Map<String, dynamic>> cart = [];
   bool isLoading = true;
 
-  // متغيرات البلوتوث للطابعة
-  List<BluetoothDevice> devices = [];
-  BluetoothDevice? selectedDevice;
-  bool isConnected = false;
-
   @override
   void initState() {
     super.initState();
     fetchProducts();
-    getBluetoothDevices();
   }
 
-  // 1. جلب المنتجات من Google Sheets
+  // جلب المنتجات والأسعار من Google Sheets
   Future<void> fetchProducts() async {
     try {
       final response = await http.get(Uri.parse(sheetUrl));
       if (response.statusCode == 200) {
-        // تحليل البيانات الواردة من الجدول
-        // (يمكنك تعديل طريقة التقسيم حسب تصميم جدولك)
         List<String> rows = response.body.split('\n');
         List<Map<String, dynamic>> loadedProducts = [];
         
@@ -82,57 +72,6 @@ class _POSHomePageState extends State<POSHomePage> {
     }
   }
 
-  // 2. البحث عن الأجهزة المقترنة (البلوتوث)
-  Future<void> getBluetoothDevices() async {
-    try {
-      List<BluetoothDevice> r = await FlutterBluetoothSerial.instance.getBondedDevices();
-      setState(() {
-        devices = r;
-      });
-    } catch (e) {
-      // التعامل مع حالة عدم توفر البلوتوث أو الأذونات
-    }
-  }
-
-  // 3. طباعة الفاتورة عبر الطابعة الحرارية
-  Future<void> printReceipt() async {
-    if (selectedDevice == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        constSnackBar(content: Text('الرجاء اختيار الطابعة الحرارية أولاً!')),
-      );
-      return;
-    }
-
-    try {
-      // الاتصال بالطابعة
-      BluetoothConnection connection = await BluetoothConnection.toAddress(selectedDevice!.address);
-      
-      // تجهيز نص الفاتورة بتنسيق ESC/POS مبسط
-      String receiptText = "\n   مؤسسة الخطيب للكهرباء\n";
-      receiptText += "--------------------------------\n";
-      for (var item in cart) {
-        receiptText += "${item['name']} x${item['qty']} - ${item['price'] * item['qty']} ل.س\n";
-      }
-      receiptText += "--------------------------------\n";
-      receiptText += "الإجمالي الكلي: ${calculateTotal()} ل.س\n";
-      receiptText += "شكراً لزيارتكم!\n\n\n";
-
-      // إرسال البيانات للطابعة
-      connection.output.add(utf8.encode(receiptText));
-      await connection.output.allSent;
-      
-      connection.close();
-      
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('تمت الطباعة بنجاح!')),
-      );
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('فشل الاتصال بالطابعة: $e')),
-      );
-    }
-  }
-
   double calculateTotal() {
     double total = 0;
     for (var item in cart) {
@@ -147,22 +86,6 @@ class _POSHomePageState extends State<POSHomePage> {
       appBar: AppBar(
         title: const Text('كاشير الخطيب للكهرباء'),
         actions: [
-          // قائمة منسدلة لاختيار الطابعة الحرارية
-          DropdownButton<BluetoothDevice>(
-            hint: const Text('اختر الطابعة', style: TextStyle(color: Colors.white)),
-            value: selectedDevice,
-            items: devices.map((device) {
-              return DropdownMenuItem(
-                value: device,
-                child: Text(device.name ?? "طابعة مجهولة"),
-              );
-            }).toList(),
-            onChanged: (device) {
-              setState(() {
-                selectedDevice = device;
-              });
-            },
-          ),
           IconButton(
             icon: const Icon(Icons.refresh),
             onPressed: fetchProducts,
@@ -173,10 +96,10 @@ class _POSHomePageState extends State<POSHomePage> {
           ? const Center(child: CircularProgressIndicator())
           : Row(
               children: [
-                // قسم المنتجات
+                // شبكة المنتجات
                 Expanded(
                   flex: 2,
-                  content: GridView.builder(
+                  child: GridView.builder(
                     padding: const EdgeInsets.all(8),
                     gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                       crossAxisCount: 3,
@@ -208,7 +131,7 @@ class _POSHomePageState extends State<POSHomePage> {
                     },
                   ),
                 ),
-                // قسم السلة والفاتورة والطباعة
+                // سلة المشتريات والفاتورة
                 Expanded(
                   flex: 1,
                   child: Container(
@@ -240,9 +163,16 @@ class _POSHomePageState extends State<POSHomePage> {
                               const SizedBox(height: 10),
                               ElevatedButton.icon(
                                 style: ElevatedButton.styleFrom(minimumSize: const Size.fromHeight(50)),
-                                onPressed: printReceipt,
-                                icon: const Icon(Icons.print),
-                                label: const Text('طباعة الفاتورة'),
+                                onPressed: () {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(content: Text('تمت العملية بنجاح!')),
+                                  );
+                                  setState(() {
+                                    cart.clear();
+                                  });
+                                },
+                                icon: const Icon(Icons.check_circle),
+                                label: const Text('إتمام البيع'),
                               ),
                             ],
                           ),
