@@ -45,7 +45,7 @@ class PosHomePage extends StatefulWidget {
 }
 
 class _PosHomePageState extends State<PosHomePage> {
-  // قاعدة بيانات تجريبية تحاكي ملف Google Sheets الخاص بك
+  // قاعدة بيانات تجريبية تحاكي ملف Google Sheets
   final Map<String, Map<String, dynamic>> _mockDatabase = {
     '123451': {'name': 'لمبة نيون', 'price': 35.0},
     '123452': {'name': 'ستارتر', 'price': 50.0},
@@ -55,7 +55,7 @@ class _PosHomePageState extends State<PosHomePage> {
   };
 
   final List<CartItem> _cartItems = [];
-  double _exchangeRate = 150.0; // سعر الصرف القابل للتعديل
+  double _exchangeRate = 140.0; // سعر الصرف الافتراضي أصبح 140
   final TextEditingController _barcodeController = TextEditingController();
   final TextEditingController _exchangeRateController = TextEditingController();
   final FocusNode _barcodeFocusNode = FocusNode();
@@ -103,21 +103,22 @@ class _PosHomePageState extends State<PosHomePage> {
     return _cartItems.fold(0, (sum, item) => sum + item.total);
   }
 
-  void _printReceipt() {
-    // معاينة الفاتورة قبل الطباعة أو إرسالها للطابعة
+  void _printReceipt({bool withReceipt = true}) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('فاتورة مبيعات', textAlign: TextAlign.center),
+        title: Text(withReceipt ? 'فاتورة مبيعات' : 'إتمام البيع السريع', textAlign: TextAlign.center),
         content: SizedBox(
           width: 300,
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const Text('الخطيب للكهرباء', textAlign: TextAlign.center, style: TextStyle(fontWeight: FontWeight.bold)),
-              const Text('دمشق - أسد الدين - جسر النحاس\nمقابل جامع حموليلا\nهاتف: 2762484', textAlign: TextAlign.center, style: TextStyle(fontSize: 12)),
-              const Divider(),
+              if (withReceipt) ...[
+                const Text('الخطيب للكهرباء', textAlign: TextAlign.center, style: TextStyle(fontWeight: FontWeight.bold)),
+                const Text('دمشق - أسد الدين - جسر النحاس\nمقابل جامع حموليلا\nهاتف: 2762484', textAlign: TextAlign.center, style: TextStyle(fontSize: 12)),
+                const Divider(),
+              ],
               ..._cartItems.map((item) => Padding(
                 padding: const EdgeInsets.symmetric(vertical: 2.0),
                 child: Row(
@@ -139,8 +140,10 @@ class _PosHomePageState extends State<PosHomePage> {
                   Text('$_grandTotal ل.س', style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.blue)),
                 ],
               ),
-              const SizedBox(height: 10),
-              const Text('شكراً لزيارتكم', textAlign: TextAlign.center, style: TextStyle(fontSize: 12, fontStyle: FontStyle.italic)),
+              if (withReceipt) ...[
+                const SizedBox(height: 10),
+                const Text('شكراً لزيارتكم', textAlign: TextAlign.center, style: TextStyle(fontSize: 12, fontStyle: FontStyle.italic)),
+              ]
             ],
           ),
         ),
@@ -153,13 +156,13 @@ class _PosHomePageState extends State<PosHomePage> {
             onPressed: () {
               Navigator.pop(context);
               setState(() {
-                _cartItems.clear(); // تفريغ السلة بعد إتمام الفاتورة
+                _cartItems.clear();
               });
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('تمت طباعة الفاتورة بنجاح')),
+                SnackBar(content: Text(withReceipt ? 'تمت طباعة الفاتورة بنجاح' : 'تم إتمام البيع بنجاح')),
               );
             },
-            child: const Text('تأكيد وطباعة'),
+            child: Text(withReceipt ? 'تأكيد وطباعة' : 'تأكيد البيع'),
           ),
         ],
       ),
@@ -173,7 +176,6 @@ class _PosHomePageState extends State<PosHomePage> {
         backgroundColor: Colors.blue.shade700,
         title: const Text('كاشير - الخطيب للكهرباء', style: TextStyle(color: Colors.white)),
         actions: [
-          // حقل تعديل سعر الصرف
           Center(
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 8.0),
@@ -222,9 +224,9 @@ class _PosHomePageState extends State<PosHomePage> {
                 ],
               ),
             ),
-            const SizedBox(height: 10),
+            const SizedBox(height: 8),
 
-            // حقل إدخال الباركود عبر السكانر
+            // حقل الباركود
             TextField(
               controller: _barcodeController,
               focusNode: _barcodeFocusNode,
@@ -242,11 +244,10 @@ class _PosHomePageState extends State<PosHomePage> {
                 }
               },
             ),
-            const SizedBox(height: 10),
+            const SizedBox(height: 8),
 
-            // جدول المواد (الباركود - اسم المادة - السعر الفردي - الكمية - المجموع)
+            // جدول المواد
             Expanded(
-              flex: 3,
               child: Container(
                 decoration: BoxDecoration(
                   color: Colors.white,
@@ -297,11 +298,11 @@ class _PosHomePageState extends State<PosHomePage> {
                 ),
               ),
             ),
-            const SizedBox(height: 10),
+            const SizedBox(height: 8),
 
-            // مربع المجموع العام الكبير والواضح
+            // مربع المجموع العام
             Container(
-              padding: const EdgeInsets.all(16.0),
+              padding: const EdgeInsets.all(12.0),
               decoration: BoxDecoration(
                 color: Colors.amber.shade100,
                 borderRadius: BorderRadius.circular(12.0),
@@ -313,11 +314,11 @@ class _PosHomePageState extends State<PosHomePage> {
                 children: [
                   const Text(
                     'المجموع العام:',
-                    style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.brown),
+                    style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.brown),
                   ),
                   Text(
                     '$_grandTotal ل.س',
-                    style: const TextStyle(fontSize: 30, fontWeight: FontWeight.bold, color: Colors.blue),
+                    style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Colors.blue),
                   ),
                 ],
               ),
@@ -325,34 +326,45 @@ class _PosHomePageState extends State<PosHomePage> {
           ],
         ),
       ),
-      // الأزرار السفلية
-      bottomNavigationBar: Container(
-        padding: const EdgeInsets.only(left: 12, right: 12, top: 6, bottom: 20),
-        color: const Color(0xFFE3F2FD),
-        child: Row(
-          children: [
-            Expanded(
-              child: ElevatedButton.icon(
-                style: ElevatedButton.styleFrom(backgroundColor: Colors.red.shade400, foregroundColor: Colors.white),
-                onPressed: () {
-                  setState(() {
-                    _cartItems.clear();
-                  });
-                },
-                icon: const Icon(Icons.cancel),
-                label: const Text('إلغاء العملية'),
+      // الأزرار السفلية مرتبة وواضحة ومنفصلة عن حافة الشاشة
+      bottomNavigationBar: SafeArea(
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          color: const Color(0xFFE3F2FD),
+          child: Row(
+            children: [
+              Expanded(
+                child: ElevatedButton.icon(
+                  style: ElevatedButton.styleFrom(backgroundColor: Colors.red.shade400, foregroundColor: Colors.white),
+                  onPressed: () {
+                    setState(() {
+                      _cartItems.clear();
+                    });
+                  },
+                  icon: const Icon(Icons.cancel),
+                  label: const Text('إلغاء'),
+                ),
               ),
-            ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: ElevatedButton.icon(
-                style: ElevatedButton.styleFrom(backgroundColor: Colors.green.shade600, foregroundColor: Colors.white),
-                onPressed: _cartItems.isEmpty ? null : _printReceipt,
-                icon: const Icon(Icons.print),
-                label: const Text('حساب مع فاتورة'),
+              const SizedBox(width: 6),
+              Expanded(
+                child: ElevatedButton.icon(
+                  style: ElevatedButton.styleFrom(backgroundColor: Colors.orange.shade700, foregroundColor: Colors.white),
+                  onPressed: _cartItems.isEmpty ? null : () => _printReceipt(withReceipt: false),
+                  icon: const Icon(Icons.flash_on),
+                  label: const Text('بدون فاتورة'),
+                ),
               ),
-            ),
-          ],
+              const SizedBox(width: 6),
+              Expanded(
+                child: ElevatedButton.icon(
+                  style: ElevatedButton.styleFrom(backgroundColor: Colors.green.shade600, foregroundColor: Colors.white),
+                  onPressed: _cartItems.isEmpty ? null : () => _printReceipt(withReceipt: true),
+                  icon: const Icon(Icons.print),
+                  label: const Text('مع فاتورة'),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
