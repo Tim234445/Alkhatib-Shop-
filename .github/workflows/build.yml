@@ -24,17 +24,14 @@ jobs:
           channel: 'stable'
           cache: true
 
-      - name: Generate Android Template
-        run: flutter create . --platforms=android --project-name=khateeb_pos
-
       - name: Install dependencies
         run: flutter pub get
 
       - name: Build APK
-        run: flutter build apk --debug
+        run: flutter build apk --release --no-pub
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: release-apk
-          path: build/app/outputs/flutter-apk/app-debug.apk
+          path: build/app/outputs/flutter-apk/app-release.apk
