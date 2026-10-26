@@ -25,7 +25,7 @@ jobs:
           cache: true
 
       - name: Generate Android Template
-        run: flutter create . --platforms=android --org com.alkhatib.pos
+        run: flutter create . --platforms=android --project-name=khateeb_pos
 
       - name: Install dependencies
         run: flutter pub get
